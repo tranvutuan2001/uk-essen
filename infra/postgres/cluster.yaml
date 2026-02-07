@@ -5,11 +5,11 @@ metadata:
 spec:
   instances: 3
   imageName: ghcr.io/cloudnative-pg/postgresql:16
-  
-  podSecurityContext:
-    runAsUser: 26
-    runAsGroup: 26
+
+  # Security context for minikube compatibility
+  securityContext:
     fsGroup: 26
+    fsGroupChangePolicy: "OnRootMismatch"
 
   postgresql:
     parameters:
@@ -25,6 +25,7 @@ spec:
         name: db-user-credentials
   
   storage:
+    storageClass: standard
     size: 500Mi
   
   resources:
