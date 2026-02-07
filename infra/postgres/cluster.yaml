@@ -6,11 +6,6 @@ spec:
   instances: 3
   imageName: ghcr.io/cloudnative-pg/postgresql:16
 
-  # Security context for minikube compatibility
-  securityContext:
-    fsGroup: 26
-    fsGroupChangePolicy: "OnRootMismatch"
-
   postgresql:
     parameters:
       shared_buffers: "256MB"
