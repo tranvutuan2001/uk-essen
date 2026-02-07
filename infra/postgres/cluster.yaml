@@ -4,6 +4,7 @@ metadata:
   name: postgres-cluster
 spec:
   instances: 3
+  imageName: ghcr.io/cloudnative-pg/postgresql:16
   
   postgresql:
     parameters:
