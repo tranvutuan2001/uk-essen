@@ -21,6 +21,13 @@ spec:
   storage:
     size: 10Gi
     storageClass: standard
+    pvcTemplate:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi
+      volumeMode: Filesystem
   
   resources:
     requests:
