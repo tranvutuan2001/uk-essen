@@ -15,8 +15,8 @@ spec:
     initdb:
       database: app_db
       owner: admin
-      username: admin
-      password: admin
+      secret:
+        name: db-user-credentials
   
   storage:
     size: 10Gi
