@@ -1,4 +1,6 @@
 rootUser: admin
 rootPassword: admin
 persistence:
-  size: 10Gi
+  size: 1Gi
+replicas: 2
+drivesPerNode: 4
