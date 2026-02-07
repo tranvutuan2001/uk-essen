@@ -1,0 +1,4 @@
+rootUser: admin
+rootPassword: admin
+persistence:
+  size: 10Gi
