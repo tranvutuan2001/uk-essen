@@ -19,9 +19,7 @@ spec:
         name: db-user-credentials
   
   storage:
-    size: 10Gi
-    storageClass: standard
-    enableSuperuserAccess: true
+    size: 500Mi
   
   resources:
     requests:
