@@ -6,6 +6,11 @@ spec:
   instances: 3
   imageName: ghcr.io/cloudnative-pg/postgresql:16
   
+  podSecurityContext:
+    runAsUser: 26
+    runAsGroup: 26
+    fsGroup: 26
+    
   postgresql:
     parameters:
       shared_buffers: "256MB"
