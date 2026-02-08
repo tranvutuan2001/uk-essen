@@ -1,19 +1,24 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: busybox
+  name: debug-toolbox
   namespace: default
 spec:
   containers:
-  - name: busybox
-    image: busybox:latest
+  - name: debug-toolbox
+    image: nicolaka/netshoot:latest
     command:
       - sleep
-      - "3600"
+      - "infinity"
     resources:
       requests:
-        memory: "64Mi"
+        memory: "128Mi"
         cpu: "100m"
       limits:
-        memory: "128Mi"
-        cpu: "200m"
+        memory: "256Mi"
+        cpu: "500m"
+    securityContext:
+      capabilities:
+        add:
+          - NET_ADMIN
+          - NET_RAW
