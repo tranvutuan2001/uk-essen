@@ -13,6 +13,14 @@ server:
         tls_disable = 1
       }
 
+      seal "transit" {
+        address = "http://openbao-transit:8200"
+        token = "${TRANSIT_TOKEN}"
+        disable_renewal = "false"
+        key_name = "autounseal"
+        mount_path = "transit/"
+      }
+
       api_addr = "http://$(POD_IP):8200"
       cluster_addr = "https://$(POD_IP):8201"
 
@@ -42,6 +50,9 @@ server:
       cpu: 500m
 
   extraSecretEnvironmentVars:
+    - envName: TRANSIT_TOKEN
+      secretName: openbao-transit-token
+      secretKey: token
     - envName: PGHOST
       secretName: openbao-postgres-secret
       secretKey: PGHOST

@@ -1,0 +1,76 @@
+# Transit OpenBao Instance - Used for Auto-Unsealing Main Cluster
+# Running in dev mode - automatically unsealed, root token: "root"
+# ⚠️ WARNING: Dev mode is NOT for production! Use only in development/testing
+
+server:
+  ha:
+    enabled: false
+
+  dev:
+    enabled: true
+    devRootToken: "root"
+
+  standalone:
+    enabled: false
+
+  dataStorage:
+    enabled: false
+
+  service:
+    enabled: true
+    type: ClusterIP
+
+  ui:
+    enabled: true
+
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 100m
+    limits:
+      memory: 256Mi
+      cpu: 200m
+
+  # Auto-configure transit engine on startup
+  postStart:
+    - /bin/sh
+    - -c
+    - |
+      sleep 5
+      bao login root
+      bao secrets enable transit || true
+      bao write -f transit/keys/autounseal || true
+      bao policy write autounseal - <<EOF
+      path "transit/encrypt/autounseal" {
+         capabilities = [ "update" ]
+      }
+      path "transit/decrypt/autounseal" {
+         capabilities = [ "update" ]
+      }
+      EOF
+      bao token create -policy=autounseal -id=autounseal-token -orphan -period=24h || true
+
+  service:
+    enabled: true
+    type: ClusterIP
+
+  ui:
+    enabled: true
+
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 100m
+    limits:
+      memory: 256Mi
+      cpu: 200m
+
+injector:
+  enabled: false
+
+global:
+  enabled: true
+  tlsDisable: true
+
+podDisruptionBudget:
+  enabled: false
