@@ -9,7 +9,7 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
-    resourceNames: ["openbao-transit-token"]
+    resourceNames: ["openbao-transit-token", "openbao-init-credentials"]
     verbs: ["get", "update", "patch"]
   - apiGroups: [""]
     resources: ["secrets"]
