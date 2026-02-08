@@ -4,7 +4,7 @@ metadata:
   name: postgres-scheduled-backup
   namespace: postgres
 spec:
-  schedule: "0 0 */1 * * *"
+  schedule: "0 */1 * * * *"
   backupOwnerReference: self
   cluster:
     name: postgres-cluster
