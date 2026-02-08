@@ -49,4 +49,4 @@ spec:
         compression: gzip
         encryption: AES256
         immediateCheckpoint: true
-    retentionPolicy: "30m"
+    retentionPolicy: 1d"
