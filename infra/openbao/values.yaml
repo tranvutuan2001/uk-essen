@@ -2,6 +2,23 @@ server:
   ha:
     enabled: true
     replicas: 3
+    config: |
+      storage "postgresql" {
+        connection_url = "postgresql://$(PGUSER):$(PGPASSWORD)@$(PGHOST):$(PGPORT)/$(OPENBAO_DB)?sslmode=disable"
+        ha_enabled = "true"
+      }
+
+      listener "tcp" {
+        address     = "0.0.0.0:8200"
+        tls_disable = 1
+      }
+
+      api_addr = "http://$(POD_IP):8200"
+      cluster_addr = "https://$(POD_IP):8201"
+
+      ui = true
+
+      service_registration "kubernetes" {}
 
   dataStorage:
     enabled: false
@@ -45,24 +62,6 @@ server:
     POD_IP:
       fieldRef:
         fieldPath: status.podIP
-
-  config: |
-    storage "postgresql" {
-      connection_url = "postgresql://$(PGUSER):$(PGPASSWORD)@$(PGHOST):$(PGPORT)/$(OPENBAO_DB)?sslmode=disable"
-      ha_enabled = "true"
-    }
-
-    listener "tcp" {
-      address     = "0.0.0.0:8200"
-      tls_disable = 1
-    }
-
-    api_addr = "http://$(POD_IP):8200"
-    cluster_addr = "https://$(POD_IP):8201"
-
-    ui = true
-
-    service_registration "kubernetes" {}
 
 injector:
   enabled: true
