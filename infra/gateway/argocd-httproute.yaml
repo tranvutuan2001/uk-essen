@@ -5,8 +5,8 @@ metadata:
   namespace: argocd
 spec:
   parentRefs:
-  - name: main-gateway
-    namespace: nginx-gateway
+  - name: envoy-gateway
+    namespace: envoy-gateway-system
   hostnames:
   - "argocd.local"
   rules:
