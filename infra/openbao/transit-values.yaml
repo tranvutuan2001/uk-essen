@@ -31,15 +31,18 @@ server:
       memory: 256Mi
       cpu: 200m
 
-  # Auto-configure transit engine on startup
   postStart:
     - /bin/sh
     - -c
     - |
       sleep 5
       bao login root
+      
+      # Enable transit engine
       bao secrets enable transit || true
       bao write -f transit/keys/autounseal || true
+      
+      # Create autounseal policy
       bao policy write autounseal - <<EOF
       path "transit/encrypt/autounseal" {
          capabilities = [ "update" ]
@@ -48,7 +51,20 @@ server:
          capabilities = [ "update" ]
       }
       EOF
-      bao token create -policy=autounseal -id=autounseal-token -orphan -period=24h || true
+      
+      # Enable Kubernetes auth
+      bao auth enable kubernetes || true
+      
+      # Configure Kubernetes auth
+      bao write auth/kubernetes/config \
+        kubernetes_host="https://kubernetes.default.svc:443"
+      
+      # Create role for main OpenBao ServiceAccount
+      bao write auth/kubernetes/role/autounseal \
+        bound_service_account_names=openbao \
+        bound_service_account_namespaces=openbao \
+        policies=autounseal \
+        ttl=1h
 
   service:
     enabled: true

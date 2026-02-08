@@ -15,10 +15,15 @@ server:
 
       seal "transit" {
         address = "http://openbao-transit:8200"
-        token = "${TRANSIT_TOKEN}"
         disable_renewal = "false"
         key_name = "autounseal"
         mount_path = "transit/"
+        namespace = ""
+        
+        # Kubernetes auth configuration
+        auth_method = "kubernetes"
+        kubernetes_role = "autounseal"
+        kubernetes_service_account = "openbao"
       }
 
       api_addr = "http://$(POD_IP):8200"
@@ -50,9 +55,6 @@ server:
       cpu: 500m
 
   extraSecretEnvironmentVars:
-    - envName: TRANSIT_TOKEN
-      secretName: openbao-transit-token
-      secretKey: token
     - envName: PGHOST
       secretName: openbao-postgres-secret
       secretKey: PGHOST
