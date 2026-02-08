@@ -2,59 +2,6 @@ server:
   ha:
     enabled: true
     replicas: 3
-    
-    # Init container to get transit token via Kubernetes auth
-    extraInitContainers:
-      - name: transit-auth
-        image: openbao/openbao:2.0.0
-        command:
-          - /bin/sh
-          - -c
-          - |
-            # Wait for transit to be ready
-            until wget -q -O- http://openbao-transit:8200/v1/sys/health > /dev/null 2>&1; do
-              echo "Waiting for transit OpenBao..."
-              sleep 2
-            done
-            
-            # Get Kubernetes service account token
-            KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
-            
-            # Authenticate to transit OpenBao using Kubernetes auth
-            TOKEN=$(bao write -address=http://openbao-transit:8200 \
-              -field=token \
-              auth/kubernetes/login \
-              role=autounseal \
-              jwt=${KUBE_TOKEN})
-            
-            # Create a wrapper script that sets the token
-            cat > /vault/scripts/entrypoint.sh <<'SCRIPT'
-            #!/bin/sh
-            export TRANSIT_TOKEN="REPLACE_TOKEN"
-            exec /usr/local/bin/docker-entrypoint.sh server
-            SCRIPT
-            
-            # Replace the token in the script
-            sed -i "s|REPLACE_TOKEN|${TOKEN}|g" /vault/scripts/entrypoint.sh
-            chmod +x /vault/scripts/entrypoint.sh
-        volumeMounts:
-          - name: scripts
-            mountPath: /vault/scripts
-    
-    # Add volumes
-    extraVolumes:
-      - name: scripts
-        emptyDir: {}
-    
-    # Mount scripts volume
-    volumeMounts:
-      - name: scripts
-        mountPath: /vault/scripts
-    
-    # Override command to use our wrapper script
-    command:
-      - /vault/scripts/entrypoint.sh
-    
     config: |
       storage "postgresql" {
         connection_url = "postgresql://admin:admin@postgres-cluster-rw.postgres.svc.cluster.local:5432/openbao_db?sslmode=disable"
@@ -68,7 +15,6 @@ server:
 
       seal "transit" {
         address = "http://openbao-transit:8200"
-        token = "${TRANSIT_TOKEN}"
         disable_renewal = "false"
         key_name = "autounseal"
         mount_path = "transit/"
@@ -80,6 +26,88 @@ server:
       ui = true
 
       service_registration "kubernetes" {}
+
+  # Init container: authenticate to transit OpenBao via Kubernetes auth,
+  # obtain a token, and create/update a Kubernetes Secret for the main container.
+  # Uses curlimages/curl which has curl + sh. Talks to K8s API directly (no kubectl needed).
+  extraInitContainers:
+    - name: transit-auth
+      image: curlimages/curl:latest
+      command:
+        - /bin/sh
+        - -ec
+        - |
+          # Wait for transit OpenBao to be ready
+          until curl -sf http://openbao-transit.openbao.svc:8200/v1/sys/health > /dev/null 2>&1; do
+            echo "Waiting for transit OpenBao to be ready..."
+            sleep 2
+          done
+          echo "Transit OpenBao is ready"
+
+          # Read the ServiceAccount JWT token
+          KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+          NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+          CA_CERT=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+
+          # Authenticate to transit OpenBao using Kubernetes auth method
+          RESPONSE=$(curl -sf -X POST \
+            -H "Content-Type: application/json" \
+            -d "{\"role\":\"autounseal\",\"jwt\":\"${KUBE_TOKEN}\"}" \
+            http://openbao-transit.openbao.svc:8200/v1/auth/kubernetes/login)
+
+          # Extract the client token from the JSON response using sed
+          TRANSIT_TOKEN=$(echo "${RESPONSE}" | sed 's/.*"client_token":"\([^"]*\)".*/\1/')
+
+          if [ -z "${TRANSIT_TOKEN}" ] || [ "${TRANSIT_TOKEN}" = "${RESPONSE}" ]; then
+            echo "ERROR: Failed to obtain transit token"
+            echo "Response: ${RESPONSE}"
+            exit 1
+          fi
+          echo "Successfully obtained transit token via Kubernetes auth"
+
+          # Base64 encode the token for the K8s Secret
+          TOKEN_B64=$(echo -n "${TRANSIT_TOKEN}" | base64)
+
+          # Create or update the Kubernetes Secret via the K8s API directly
+          SECRET_JSON="{
+            \"apiVersion\": \"v1\",
+            \"kind\": \"Secret\",
+            \"metadata\": {
+              \"name\": \"openbao-transit-token\",
+              \"namespace\": \"${NAMESPACE}\"
+            },
+            \"type\": \"Opaque\",
+            \"data\": {
+              \"token\": \"${TOKEN_B64}\"
+            }
+          }"
+
+          # Try PUT (update) first, fall back to POST (create)
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            --cacert "${CA_CERT}" \
+            -H "Authorization: Bearer ${KUBE_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -X PUT \
+            -d "${SECRET_JSON}" \
+            "https://kubernetes.default.svc/api/v1/namespaces/${NAMESPACE}/secrets/openbao-transit-token")
+
+          if [ "${HTTP_CODE}" = "404" ]; then
+            echo "Secret does not exist yet, creating..."
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+              --cacert "${CA_CERT}" \
+              -H "Authorization: Bearer ${KUBE_TOKEN}" \
+              -H "Content-Type: application/json" \
+              -X POST \
+              -d "${SECRET_JSON}" \
+              "https://kubernetes.default.svc/api/v1/namespaces/${NAMESPACE}/secrets")
+          fi
+
+          if [ "${HTTP_CODE}" -ge 200 ] && [ "${HTTP_CODE}" -lt 300 ]; then
+            echo "Transit token secret created/updated successfully (HTTP ${HTTP_CODE})"
+          else
+            echo "ERROR: Failed to create/update secret (HTTP ${HTTP_CODE})"
+            exit 1
+          fi
 
   dataStorage:
     enabled: false
@@ -102,7 +130,13 @@ server:
       memory: 512Mi
       cpu: 500m
 
+  # Use extraArgs to source the transit token as VAULT_TOKEN before starting
+  # The extraArgs value is appended to the shell script that runs in /bin/sh -ec
+
   extraSecretEnvironmentVars:
+    - envName: VAULT_TOKEN
+      secretName: openbao-transit-token
+      secretKey: token
     - envName: PGHOST
       secretName: openbao-postgres-secret
       secretKey: PGHOST

@@ -16,6 +16,11 @@ spec:
     - repoURL: 'https://github.com/tranvutuan2001/uk-essen.git'
       targetRevision: HEAD
       ref: rootrepo
+
+    # Additional raw manifests (RBAC for transit auth init container)
+    - repoURL: 'https://github.com/tranvutuan2001/uk-essen.git'
+      targetRevision: HEAD
+      path: infra/openbao/manifests
     
   destination:
     server: https://kubernetes.default.svc

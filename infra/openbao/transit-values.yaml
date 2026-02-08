@@ -66,21 +66,6 @@ server:
         policies=autounseal \
         ttl=1h
 
-  service:
-    enabled: true
-    type: ClusterIP
-
-  ui:
-    enabled: true
-
-  resources:
-    requests:
-      memory: 128Mi
-      cpu: 100m
-    limits:
-      memory: 256Mi
-      cpu: 200m
-
 injector:
   enabled: false
 

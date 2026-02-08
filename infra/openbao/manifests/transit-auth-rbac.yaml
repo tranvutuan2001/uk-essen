@@ -1,0 +1,30 @@
+# RBAC to allow the openbao ServiceAccount to create/update the transit token secret
+# This is needed by the init container that authenticates to transit OpenBao
+# via Kubernetes auth and stores the resulting token as a Kubernetes Secret.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: openbao-transit-auth
+  namespace: openbao
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["openbao-transit-token"]
+    verbs: ["get", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: openbao-transit-auth
+  namespace: openbao
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: openbao-transit-auth
+subjects:
+  - kind: ServiceAccount
+    name: openbao
+    namespace: openbao
