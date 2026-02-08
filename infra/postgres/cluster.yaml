@@ -50,10 +50,3 @@ spec:
         encryption: AES256
         immediateCheckpoint: true
     retentionPolicy: "30m"
-  
-  scheduledBackup:
-    - name: scheduled-backup
-      schedule: "*/5 * * * *"
-      backupOwnerReference: self
-      target: primary
-      method: barmanObjectStore
