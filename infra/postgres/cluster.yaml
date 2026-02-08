@@ -40,16 +40,20 @@ spec:
       endpointURL: http://minio-application.minio.svc.cluster.local:9000
       s3Credentials:
         accessKeyId:
-          name: minio-credentials
+          name: db-user-credentials
           key: ACCESS_KEY_ID
         secretAccessKey:
-          name: minio-credentials
+          name: db-user-credentials
           key: ACCESS_SECRET_KEY
-      wal:
-        compression: gzip
-        encryption: AES256
       data:
         compression: gzip
         encryption: AES256
         immediateCheckpoint: true
-    retentionPolicy: "1d"
+    retentionPolicy: "30m"
+  
+  scheduledBackup:
+    - name: scheduled-backup
+      schedule: "*/5 * * * *"
+      backupOwnerReference: self
+      target: primary
+      method: barmanObjectStore
