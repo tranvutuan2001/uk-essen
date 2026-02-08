@@ -12,6 +12,12 @@ spec:
     - path:
         type: PathPrefix
         value: /minio
+    filters:
+    - type: URLRewrite
+      urlRewrite:
+        path:
+          type: ReplacePrefixMatch
+          replacePrefixMatch: /
     backendRefs:
     - name: minio-console
       port: 9001
