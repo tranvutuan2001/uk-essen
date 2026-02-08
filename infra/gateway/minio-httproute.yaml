@@ -19,5 +19,5 @@ spec:
           type: ReplacePrefixMatch
           replacePrefixMatch: /
     backendRefs:
-    - name: minio-console
+    - name: minio-application-console
       port: 9001
