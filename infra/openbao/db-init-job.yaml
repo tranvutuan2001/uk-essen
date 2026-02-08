@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: openbao-db-init
+  namespace: openbao
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: create-database
+        image: postgres:16-alpine
+        envFrom:
+        - secretRef:
+            name: openbao-postgres-secret
+        command:
+        - sh
+        - -c
+        - |
+          echo "Creating openbao database if it doesn't exist..."
+          psql -tc "SELECT 1 FROM pg_database WHERE datname = 'openbao_db'" | grep -q 1 || psql -c "CREATE DATABASE openbao_db"
+          echo "Database openbao_db is ready"
