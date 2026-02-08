@@ -4,7 +4,7 @@ server:
     replicas: 3
     config: |
       storage "postgresql" {
-        connection_url = "postgresql://admin:admin@postgres-cluster-rw.cnpg-system.svc.cluster.local:5432/openbao_db?sslmode=disable"
+        connection_url = "postgresql://admin:admin@postgres-cluster-rw.postgres.svc.cluster.local:5432/openbao_db?sslmode=disable"
         ha_enabled = "true"
       }
 
