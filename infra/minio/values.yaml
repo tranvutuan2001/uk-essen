@@ -2,8 +2,7 @@ rootUser: admin
 rootPassword: admin123456
 persistence:
   size: 1Gi
-replicas: 2
-drivesPerNode: 2
+mode: standalone
 resources:
   requests:
     memory: 128Mi
