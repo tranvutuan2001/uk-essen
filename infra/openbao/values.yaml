@@ -41,12 +41,12 @@ server:
       secretName: openbao-postgres-secret
       secretKey: OPENBAO_DB
 
-  extraArgs: "-config=/vault/config/extraconfig.hcl"
+  extraArgs: "-config=/vault/userconfig/extraconfig.hcl"
 
   extraVolumes:
     - type: secret
       name: openbao-config
-      path: /vault/config
+      path: /vault/userconfig
 
 injector:
   enabled: true
