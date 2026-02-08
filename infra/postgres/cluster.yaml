@@ -33,3 +33,23 @@ spec:
   
   affinity:
     podAntiAffinityType: required
+  
+  backup:
+    barmanObjectStore:
+      destinationPath: s3://postgres-backups/
+      endpointURL: http://minio-application.minio.svc.cluster.local:9000
+      s3Credentials:
+        accessKeyId:
+          name: minio-credentials
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: minio-credentials
+          key: ACCESS_SECRET_KEY
+      wal:
+        compression: gzip
+        encryption: AES256
+      data:
+        compression: gzip
+        encryption: AES256
+        immediateCheckpoint: true
+    retentionPolicy: "1d"
