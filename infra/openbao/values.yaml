@@ -2,6 +2,59 @@ server:
   ha:
     enabled: true
     replicas: 3
+    
+    # Init container to get transit token via Kubernetes auth
+    extraInitContainers:
+      - name: transit-auth
+        image: openbao/openbao:2.0.0
+        command:
+          - /bin/sh
+          - -c
+          - |
+            # Wait for transit to be ready
+            until wget -q -O- http://openbao-transit:8200/v1/sys/health > /dev/null 2>&1; do
+              echo "Waiting for transit OpenBao..."
+              sleep 2
+            done
+            
+            # Get Kubernetes service account token
+            KUBE_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+            
+            # Authenticate to transit OpenBao using Kubernetes auth
+            TOKEN=$(bao write -address=http://openbao-transit:8200 \
+              -field=token \
+              auth/kubernetes/login \
+              role=autounseal \
+              jwt=${KUBE_TOKEN})
+            
+            # Create a wrapper script that sets the token
+            cat > /vault/scripts/entrypoint.sh <<'SCRIPT'
+            #!/bin/sh
+            export TRANSIT_TOKEN="REPLACE_TOKEN"
+            exec /usr/local/bin/docker-entrypoint.sh server
+            SCRIPT
+            
+            # Replace the token in the script
+            sed -i "s|REPLACE_TOKEN|${TOKEN}|g" /vault/scripts/entrypoint.sh
+            chmod +x /vault/scripts/entrypoint.sh
+        volumeMounts:
+          - name: scripts
+            mountPath: /vault/scripts
+    
+    # Add volumes
+    extraVolumes:
+      - name: scripts
+        emptyDir: {}
+    
+    # Mount scripts volume
+    volumeMounts:
+      - name: scripts
+        mountPath: /vault/scripts
+    
+    # Override command to use our wrapper script
+    command:
+      - /vault/scripts/entrypoint.sh
+    
     config: |
       storage "postgresql" {
         connection_url = "postgresql://admin:admin@postgres-cluster-rw.postgres.svc.cluster.local:5432/openbao_db?sslmode=disable"
@@ -15,15 +68,10 @@ server:
 
       seal "transit" {
         address = "http://openbao-transit:8200"
+        token = "${TRANSIT_TOKEN}"
         disable_renewal = "false"
         key_name = "autounseal"
         mount_path = "transit/"
-        namespace = ""
-        
-        # Kubernetes auth configuration
-        auth_method = "kubernetes"
-        kubernetes_role = "autounseal"
-        kubernetes_service_account = "openbao"
       }
 
       api_addr = "http://$(POD_IP):8200"
