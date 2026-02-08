@@ -16,10 +16,6 @@ spec:
     - repoURL: 'https://github.com/tranvutuan2001/uk-essen.git'
       targetRevision: HEAD
       ref: rootrepo
-
-    - repoURL: https://github.com/tranvutuan2001/uk-essen.git
-      targetRevision: main
-      path: infra/openbao
     
   destination:
     server: https://kubernetes.default.svc
