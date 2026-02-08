@@ -58,11 +58,6 @@ server:
       secretName: openbao-postgres-secret
       secretKey: OPENBAO_DB
 
-  extraEnvironmentVars:
-    POD_IP:
-      fieldRef:
-        fieldPath: status.podIP
-
 injector:
   enabled: true
   replicas: 2
