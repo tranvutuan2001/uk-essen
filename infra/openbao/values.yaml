@@ -3,7 +3,6 @@ server:
     enabled: true
     replicas: 3
 
-  # Disabled because we are using PostgreSQL as the backend
   dataStorage:
     enabled: false
 
@@ -25,7 +24,6 @@ server:
       memory: 512Mi
       cpu: 500m
 
-  # These inject the DB credentials into the pod environment
   extraSecretEnvironmentVars:
     - envName: PGHOST
       secretName: openbao-postgres-secret
@@ -43,13 +41,13 @@ server:
       secretName: openbao-postgres-secret
       secretKey: OPENBAO_DB
 
-  # Pointing to the file mounted via extraVolumeMounts below
+
   extraArgs: "-config=/vault/userconfig/extraconfig.hcl"
 
   extraVolumes:
     - name: openbao-config
       secret:
-        secretName: openbao-config  # This K8s secret must contain 'extraconfig.hcl'
+        secretName: openbao-config
 
   extraVolumeMounts:
     - name: openbao-config
