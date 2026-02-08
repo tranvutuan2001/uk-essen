@@ -11,12 +11,7 @@ spec:
       targetRevision: 0.4.0
       helm:
         valueFiles:
-          - $rootrepo/infra/openbao/values.yaml
-    
-    - repoURL: 'https://github.com/tranvutuan2001/uk-essen.git'
-      targetRevision: HEAD
-      path: infra/openbao
-      ref: rootrepo
+          - https://github.com/tranvutuan2001/uk-essen.git/infra/openbao/values.yaml
 
     - repoURL: https://github.com/tranvutuan2001/uk-essen.git
       targetRevision: main
