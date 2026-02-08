@@ -7,13 +7,11 @@ spec:
   parentRefs:
   - name: envoy-gateway
     namespace: envoy-gateway-system
-  hostnames:
-  - "openbao.local"
   rules:
   - matches:
     - path:
         type: PathPrefix
-        value: /
+        value: /openbao
     backendRefs:
     - name: openbao
       port: 8200
