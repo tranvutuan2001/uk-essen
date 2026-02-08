@@ -7,11 +7,13 @@ spec:
   parentRefs:
   - name: envoy-gateway
     namespace: envoy-gateway-system
+  hostnames:
+  - "minio.localhost"
   rules:
   - matches:
     - path:
         type: PathPrefix
-        value: /minio
+        value: /
     backendRefs:
     - name: minio-console
       port: 9001
