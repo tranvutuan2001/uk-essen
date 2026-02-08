@@ -18,6 +18,9 @@ spec:
       owner: admin
       secret:
         name: db-user-credentials
+      postInitSQL:
+        - ALTER USER admin CREATEDB CREATEROLE;
+        - CREATE DATABASE openbao_db OWNER admin;
   
   storage:
     storageClass: standard
