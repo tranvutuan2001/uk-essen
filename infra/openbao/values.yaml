@@ -131,7 +131,8 @@ server:
 
           if [ "${INITIALIZED}" = "true" ]; then
             echo "OpenBao is already initialized. Nothing to do."
-            exit 0
+            # Sleep forever — sidecar containers must not exit or K8s restarts them
+            tail -f /dev/null
           fi
 
           echo "OpenBao is NOT initialized. Running auto-init..."
@@ -202,6 +203,9 @@ server:
             echo "Root Token: ${ROOT_TOKEN}"
             echo "Recovery Key: ${RECOVERY_KEY}"
           fi
+
+          # Sleep forever — sidecar containers must not exit or K8s restarts them
+          tail -f /dev/null
 
   dataStorage:
     enabled: false
