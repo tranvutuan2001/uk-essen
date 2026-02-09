@@ -97,4 +97,20 @@ The Postgres cluster utilizes the **CloudNativePG (CNPG)** operator to manage li
 - **Method:** The current setup performs standard object store backups (barmanObjectStore). This is **not a WAL (Write-Ahead Log) archive** backup.
     - **Implication:** Point-in-Time Recovery (PITR) to the exact second before a crash is not possible; restoration is limited to the last successful snapshot.
 - **Restoration:** To restore, update the cluster manifest to use `.bootstrap.recover` instead of `.bootstrap.initdb`.
-- **Production Note:** In a real production scenario, consider to have the S3 bucket reside **outside** the cluster (e.g., AWS S3, Google Cloud Storage) across multiple regions to survive a total cluster failure. WAL archiving should be enabled for critical systems to allow full PITR.
+- **Production Note:** In a real production scenario, the S3 bucket should inevitably reside **outside** the cluster (e.g., AWS S3, Google Cloud Storage) across multiple regions to survive a total cluster failure. WAL archiving should be enabled for critical systems to allow full PITR.
+
+### 4. TLS & Certificate Management
+This demo uses a simplified TLS setup appropriate for a local (no-DNS) environment.
+
+- **Current Implementation (Self-Signed):**
+    - High-level DNS resolution does not exist for the local `kind` cluster.
+    - HTTPS traffic is terminated at the Envoy Gateway using a manual Kubernetes Secret (`gateway-tls`) containing a **self-signed wildcard certificate**.
+    - **How it works:** The Gateway listener is hardcoded to reference this secret. Since the certificate is not issued by a known public Certificate Authority (CA), browsers will flag connections as insecure. For local testing, these warnings can be safely ignored or bypassed.
+
+- **Production Strategy (ACME & cert-manager):**
+    - A production environment would utilize cert-manager to automate certificate issuance and renewal.
+    - Certificates would be obtained from a trusted CA (e.g., Let's Encrypt) using the ACME protocol.
+    - DNS challenges would be employed to validate domain ownership, requiring proper DNS records.
+
+### 5. Secrets Management
+**Important:** For this demonstration, secrets (e.g., database credentials, TLS certificates) are checked directly into the repository in the `bootstraps/secret/` folder. This is strictly for demo purposes to simplify setup and avoid external dependencies.
