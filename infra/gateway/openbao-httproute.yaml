@@ -5,13 +5,19 @@ metadata:
   namespace: openbao
 spec:
   parentRefs:
-  - name: envoy-gateway
-    namespace: envoy-gateway-system
+    - name: envoy-gateway
+      namespace: envoy-gateway-system
   rules:
   - matches:
     - path:
         type: PathPrefix
         value: /openbao
+  - filters:
+      type: URLRewrite
+      urlRewrite:
+        path:
+          type: ReplacePrefixMatch
+          replacePrefixMatch: /
     backendRefs:
-    - name: openbao
-      port: 8200
+      - name: openbao
+        port: 8200
