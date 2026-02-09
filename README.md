@@ -46,7 +46,7 @@ Follow these steps to spin up the environment:
 Navigate to the `kind` directory and execute the creation script:
 
 ```bash
-cd kind
+# inside kind folder
 chmod +x ./create-cluster.sh
 ./create-cluster.sh
 ```
@@ -55,7 +55,7 @@ chmod +x ./create-cluster.sh
 Navigate to the `bootstraps` directory and initialize Argo CD and the root application:
 
 ```bash
-cd bootstraps
+# inside bootstraps folder
 chmod +x ./init.sh
 ./init.sh
 ```
@@ -66,6 +66,7 @@ chmod +x ./init.sh
 Once the namespaces exist, apply the necessary secrets:
 
 ```bash
+# inside bootstraps folder
 chmod +x ./init-secret.sh
 ./init-secret.sh
 ```
@@ -76,6 +77,7 @@ chmod +x ./init-secret.sh
 To login to OpenBao UI, you'll need the root token. You can retrieve it using the provided script:
 
 ```bash
+# inside bootstraps folder
 chmod +x ./get-openbao-token.sh
 ./get-openbao-token.sh
 ```
