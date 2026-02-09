@@ -1,0 +1,100 @@
+# Kubernetes GitOps Demo Environment
+
+> **Note:** This repository is intended for **demonstration purposes only** and is not production-ready. It provisions a local Kubernetes cluster using `kind` and manages applications via Argo CD in a GitOps fashion.
+
+## Overview
+
+This project provides a fully automated local Kubernetes environment demonstrating a modern cloud-native stack. It uses **Argo CD** to manage the lifecycle of all applications. The core architecture follows the "App of Apps" pattern, where a root application acts as the entry point to manage other manifest definitions located in the `apps/` directory.
+
+Any changes committed to the `apps/` folder are automatically synchronized to the cluster by the root Argo CD application.
+
+### Key Components
+
+The cluster hosts the following integrated stack:
+
+1.  **S3 Storage:** [MinIO](https://min.io/) (Object storage)
+2.  **PostgreSQL Database:** High-availability cluster managed by [CloudNativePG (CNPG)](https://cloudnative-pg.io/)
+3.  **Secrets Management:** [OpenBao](https://openbao.org/) (Vault fork)
+4.  **API Gateway:** Envoy Gateway with Gateway API configuration
+5.  **Debugging & Transport:** BusyBox and a dummy Nginx server for connectivity testing
+
+---
+
+## Repository Structure
+
+- **`bootstraps/`**: The entry point for cluster initialization. Contains the Argo CD installation manifests, the `root-app` definition, and scripts for initializing secrets.
+- **`apps/`**: Argo CD Application definitions. This directory serves as the source of truth for what is deployed in the cluster.
+- **`infra/`**: The detailed Kubernetes manifests (Deployments, Services, ConfigMaps, CRDs) referenced by the applications in `apps/`.
+- **`kind/`**: Configuration and scripts to provision the local Kubernetes cluster using `kind`.
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+*   **Docker Desktop** (or a compatible container runtime)
+*   **[kind](https://kind.sigs.k8s.io/)** (Kubernetes in Docker)
+*   **kubectl** CLI tool
+*   **Hardware:** Minimum **8 GB RAM** recommended due to the number of components.
+
+### Installation
+
+Follow these steps to spin up the environment:
+
+#### 1. Provision the Cluster
+Navigate to the `kind` directory and execute the creation script:
+
+```bash
+cd kind
+chmod +x ./create-cluster.sh
+./create-cluster.sh
+```
+
+#### 2. Initialize Applications
+Navigate to the `bootstraps` directory and initialize Argo CD and the root application:
+
+```bash
+cd bootstraps
+chmod +x ./init.sh
+./init.sh
+```
+
+> ⏳ **Wait:** Allow a few minutes for the `argocd` and other namespaces (like `postgres`, `openbao`) to be created and for the CRDs to be registered.
+
+#### 3. Initialize Secrets
+Once the namespaces exist, apply the necessary secrets:
+
+```bash
+chmod +x ./init-secret.sh
+./init-secret.sh
+```
+
+> **Tip:** If `./init-secret.sh` fails with a "namespace not found" error, wait a few more minutes for the Argo CD sync to create the namespaces, then retry.
+
+---
+
+## Architecture & Design Decisions
+
+### 1. Kind vs. Minikube
+**Kind (Kubernetes in Docker)** was selected over Minikube primarily due to better compatibility with Persistent Volume Claims (PVCs) on macOS environments. Kind provides a multi-node cluster simulation using Docker containers, which closely mirrors a real node topology for testing scheduling constraints.
+
+### 2. Database High Availability & Topology Constraints
+The Postgres cluster utilizes the **CloudNativePG (CNPG)** operator to manage lifecycle and high availability.
+- **Cluster Topology:** The Kind cluster is configured with **4 nodes** (1 Control Plane, 3 Workers).
+- **Replica Configuration:** The Postgres cluster requests **6 replicas**.
+- **Scheduling Constraints:** `podAntiAffinity` is configured to `required`, enforcing one database pod per node.
+
+**Outcome:** You will observe only **3 replicas** running (one per worker node). The remaining requested replicas will stay pending.
+- **Node Failure:** If a node fails, CNPG attempts to handle failover.
+- **Promotions:** If the node running the Primary pod fails, a Standby on another node is promoted.
+- **Rescheduling:** In a more capable environment with sufficient nodes, failed pods would be rescheduled elsewhere. In this constrained 3-worker environment, we have reached physical capacity, preserving the "one replica per node" rule to ensure data integrity and true HA.
+
+### 3. Backup & Disaster Recovery Strategy
+**MinIO** acts as the S3-compatible backend for database backups, demonstrating a self-contained backup loop within the cluster.
+- **Frequency:** Backups are scheduled to run hourly.
+- **Retention:** Policy is set to one day.
+- **Method:** The current setup performs standard object store backups (barmanObjectStore). This is **not a WAL (Write-Ahead Log) archive** backup.
+    - **Implication:** Point-in-Time Recovery (PITR) to the exact second before a crash is not possible; restoration is limited to the last successful snapshot.
+- **Restoration:** To restore, update the cluster manifest to use `.bootstrap.recover` instead of `.bootstrap.initdb`.
+- **Production Note:** In a real production scenario, consider to have the S3 bucket reside **outside** the cluster (e.g., AWS S3, Google Cloud Storage) across multiple regions to survive a total cluster failure. WAL archiving should be enabled for critical systems to allow full PITR.
