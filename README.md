@@ -80,6 +80,31 @@ chmod +x ./get-openbao-token.sh
 ./get-openbao-token.sh
 ```
 
+### 5. Access User Interfaces (Port Forwarding)
+
+Due to current gateway limitations, you need to use port forwarding to access the web interfaces of the deployed components.
+
+#### MinIO (Object Storage)
+*   **Command:** `kubectl port-forward svc/minio-application-console -n minio 9001:9001`
+*   **URL:** [http://localhost:9001](http://localhost:9001)
+*   **Credentials:**
+    *   **Username:** `admin`
+    *   **Password:** `admin123456`
+
+#### OpenBao (Secrets Management)
+*   **Command:** `kubectl port-forward svc/openbao -n openbao 8200:8200`
+*   **URL:** [http://localhost:8200](http://localhost:8200)
+*   **Credentials:**
+    *   **Method:** Token authentication.
+    *   **Token:** Run `./bootstraps/get-openbao-token.sh` to retrieve the root token.
+
+#### Argo CD (GitOps)
+*   **Command:** `kubectl port-forward svc/argocd-server -n argocd 8080:443`
+*   **URL:** [https://localhost:8080](https://localhost:8080)
+*   **Credentials:**
+    *   **Username:** `admin`
+    *   **Password:** Follow the [official documentation](https://argo-cd.readthedocs.io/en/stable/getting_started/) to retrieve the initial admin password.
+
 ---
 
 ## Architecture & Design Decisions
