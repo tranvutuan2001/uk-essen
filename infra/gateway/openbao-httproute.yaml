@@ -12,8 +12,8 @@ spec:
     - path:
         type: PathPrefix
         value: /openbao
-  - filters:
-      type: URLRewrite
+    filters:
+    - type: URLRewrite
       urlRewrite:
         path:
           type: ReplacePrefixMatch
