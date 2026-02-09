@@ -72,6 +72,14 @@ chmod +x ./init-secret.sh
 
 > **Tip:** If `./init-secret.sh` fails with a "namespace not found" error, wait a few more minutes for the Argo CD sync to create the namespaces, then retry.
 
+#### 4. Access OpenBao
+To login to OpenBao UI, you'll need the root token. You can retrieve it using the provided script:
+
+```bash
+chmod +x ./get-openbao-token.sh
+./get-openbao-token.sh
+```
+
 ---
 
 ## Architecture & Design Decisions
@@ -114,3 +122,14 @@ This demo uses a simplified TLS setup appropriate for a local (no-DNS) environme
 
 ### 5. Secrets Management
 **Important:** For this demonstration, secrets (e.g., database credentials, TLS certificates) are checked directly into the repository in the `bootstraps/secret/` folder. This is strictly for demo purposes to simplify setup and avoid external dependencies.
+
+---
+
+## Limitations
+
+This setup has several critical limitations that make it unsuitable for production use:
+
+1.  **Colocated Backups:** As mentioned earlier, since MinIO also resides inside the cluster, if a disaster occurs to the cluster causing data loss in both the PostgreSQL DB and MinIO, the database data is permanently lost.
+2.  **OpenBao Auto-Unseal Risks:** OpenBao is configured to work with an auto-unseal mechanism using a transit server running in dev mode. This imposes two critical vulnerabilities:
+    -   **Security Breach:** The transit server running in dev mode is a security risk.
+    -   **Data Loss Risk:** The transit server (in dev mode) uses in-memory storage. If the transit server is completely deleted for any reason, the main OpenBao pods cannot be unsealed anymore. In this scenario, the data stored in the sealed OpenBao is considered lost. To restore functionality, both the transit server and the main OpenBao cluster must be deleted and re-initialized.
