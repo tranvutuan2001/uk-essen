@@ -12,17 +12,6 @@ spec:
     - path:
         type: PathPrefix
         value: /openbao
-    filters:
-    - type: URLRewrite
-      urlRewrite:
-        path:
-          type: ReplacePrefixMatch
-          replacePrefixMatch: /
-    - type: RequestHeaderModifier
-      requestHeaderModifier:
-        set:
-        - name: X-Forwarded-Prefix
-          value: /openbao
     backendRefs:
       - name: openbao
         port: 8200
