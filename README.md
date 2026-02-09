@@ -36,7 +36,7 @@ The cluster hosts the following integrated stack:
 *   **Docker Desktop** (or a compatible container runtime)
 *   **[kind](https://kind.sigs.k8s.io/)** (Kubernetes in Docker)
 *   **kubectl** CLI tool
-*   **Hardware:** Minimum **8 GB RAM** recommended due to the number of components.
+*   **Hardware:** Minimum **8 GB** RAM and **5 GB** of space recommended due to the number of components.
 
 ### Installation
 
@@ -161,3 +161,4 @@ This setup has several critical limitations that make it unsuitable for producti
     -   **Security Breach:** The transit server running in dev mode is a security risk.
     -   **Data Loss Risk:** The transit server (in dev mode) uses in-memory storage. If the transit server is completely deleted for any reason, the main OpenBao pods cannot be unsealed anymore. In this scenario, the data stored in the sealed OpenBao is considered lost. To restore functionality, both the transit server and the main OpenBao cluster must be deleted and re-initialized.
 3.  **API Gateway Connectivity:** Gateway does not work correctly and needs further development to be able to expose the component to localhost. For now, you have to perform port forwarding on services you need such as OpenBao, MinIO, Argo Server, to be able to see their UI.
+4.  **MinIO Availability:** MinIO is configured in standalone mode for the sake of simplicity. It is not resilient in case of failure.
